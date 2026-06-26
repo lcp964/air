@@ -13,11 +13,14 @@
           <div class="toolbar-title">日程计划</div>
           <div class="date-pill">{{ rentTime }}</div>
           <div class="view-switch">
-            <button @click="handleSwitch('day')" type="button" class="view-switch-btn active">
+            <button @click="handleSwitch('day')" :class="{ 'active': activeView === 'day' }" type="button"
+              class="view-switch-btn ">
               <i class="el-icon-date" />
             </button>
-            <button @click="handleSwitch('month')" type="button" class="view-switch-btn">月</button>
-            <button @click="handleSwitch('year')" type="button" class="view-switch-btn">年</button>
+            <button @click="handleSwitch('month')" :class="{ 'active': activeView === 'month' }" type="button"
+              class="view-switch-btn">月</button>
+            <button @click="handleSwitch('year')" :class="{ 'active': activeView === 'year' }" type="button"
+              class="view-switch-btn">年</button>
           </div>
         </div>
 
@@ -36,8 +39,10 @@
           <div class="calendar-filter">
             <div class="filter-label">日期选择</div>
             <div class="month-input">
-              <span>2026-06</span>
-              <i class="el-icon-date" />
+              <!-- <span>{{ rentTime }}</span>
+              <i class="el-icon-date" /> -->
+              <el-date-picker v-model="rentTime" @change="handleMonthChange" type="month" placeholder="选择月" />
+              <!-- <el-date-picker v-model="rentTime" @change="handleYearChange" type="year" placeholder="选择年" /> -->
             </div>
           </div>
           <div class="mini-calendar-list">
@@ -248,6 +253,7 @@ export default {
         ignoreHoliday: false,
         days: []
       },
+      activeView: 'day',
       scheduleTabs: [
         { key: 'running', label: '运行日程' },
         { key: 'recommend', label: '削峰日程' }
@@ -320,6 +326,7 @@ export default {
       return val === 'day' ? `${year}-${month}-${day}` : val === 'month' ? `${year}-${month}` : `${year}`
     },
     handleSwitch(viewMode) {
+      this.activeView = viewMode
       switch (viewMode) {
         case 'day':
           this.rentTime = this.renderCalendar('day')
@@ -490,14 +497,27 @@ export default {
 }
 
 .month-input {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 152px;
-  height: 32px;
   padding: 0 12px;
-  border: 1px solid #c9d3e6;
-  border-radius: 4px;
+
+  ::v-deep .el-date-editor {
+    width: 180px !important;
+    height: 36px !important;
+  }
+
+  ::v-deep .el-date-editor .el-input__inner {
+    height: 36px !important;
+    border: 2px solid #2d63ff !important;
+    border-radius: 6px !important;
+  }
+
+  ::v-deep .el-date-editor .el-input__inner:hover {
+    border-color: #1a4fd9 !important;
+  }
+
+  ::v-deep .el-date-editor .el-input__inner:focus {
+    border-color: #2d63ff !important;
+    box-shadow: 0 0 0 2px rgba(45, 99, 255, 0.2) !important;
+  }
 }
 
 .status-pills {

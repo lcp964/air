@@ -2,13 +2,8 @@
   <div class="schedule-page">
     <div v-if="pageMode === 'list'" class="schedule-list-page">
       <div class="schedule-tabs">
-        <button
-          v-for="tab in scheduleTabs"
-          :key="tab.key"
-          type="button"
-          :class="['schedule-tab', { active: activeScheduleTab === tab.key }]"
-          @click="activeScheduleTab = tab.key"
-        >
+        <button v-for="tab in scheduleTabs" :key="tab.key" type="button"
+          :class="['schedule-tab', { active: activeScheduleTab === tab.key }]" @click="activeScheduleTab = tab.key">
           {{ tab.label }}
         </button>
       </div>
@@ -16,29 +11,16 @@
       <div class="toolbar-card">
         <div class="toolbar-left">
           <div class="toolbar-title">日程计划</div>
-          <div class="date-pill">{{ currentDateLabel }}</div>
+          <div class="date-pill">{{ rentTime }}</div>
           <div class="view-switch">
-            <button
-              type="button"
-              :class="['view-switch-btn', { active: calendarView === 'day' }]"
-              @click="calendarView = 'day'"
-            >
-              日
+            <button @click="handleSwitch('day')" :class="{ 'active': activeView === 'day' }" type="button"
+              class="view-switch-btn ">
+              <i class="el-icon-date" />
             </button>
-            <button
-              type="button"
-              :class="['view-switch-btn', { active: calendarView === 'month' }]"
-              @click="calendarView = 'month'"
-            >
-              月
-            </button>
-            <button
-              type="button"
-              :class="['view-switch-btn', { active: calendarView === 'year' }]"
-              @click="calendarView = 'year'"
-            >
-              年
-            </button>
+            <button @click="handleSwitch('month')" :class="{ 'active': activeView === 'month' }" type="button"
+              class="view-switch-btn">月</button>
+            <button @click="handleSwitch('year')" :class="{ 'active': activeView === 'year' }" type="button"
+              class="view-switch-btn">年</button>
           </div>
         </div>
 
@@ -57,81 +39,43 @@
           <div class="calendar-filter">
             <div class="filter-label">日期选择</div>
             <div class="month-input">
-              <span>{{ currentPickerLabel }}</span>
-              <i class="el-icon-date"></i>
+              <i class="el-icon-date calendar-icon" :class="[focusDate ? 'redDate' : '']" />
+              <el-date-picker @blur="handleBlurDate" @focus="handleFocusDate" :clearable="!1" v-model="rentNewTime"
+                @change="handleMonthChange" :type="activeView !== 'year' ? 'month' : 'year'" placeholder="选择月" />
             </div>
           </div>
-
-          <div class="status-pills">
-            <button type="button" :class="['status-pill', { active: activeStatus === 'valid' }]" @click="activeStatus = 'valid'">有效日程 (0)</button>
-            <button type="button" :class="['status-pill', { active: activeStatus === 'invalid' }]" @click="activeStatus = 'invalid'">失效日程 (4)</button>
-            <button type="button" :class="['status-pill', { active: activeStatus === 'all' }]" @click="activeStatus = 'all'">全部 (4)</button>
-          </div>
-
-          <div class="mini-calendar-list" v-if="calendarView !== 'year'">
-            <div v-for="month in visibleCalendarMonths" :key="month.title" class="mini-calendar-card">
+          <div class="mini-calendar-list">
+            <div v-for="month in calendarMonths" :key="month.title" class="mini-calendar-card">
               <div class="mini-title">{{ month.title }}</div>
               <div class="week-row">
                 <span v-for="week in weeks" :key="week">{{ week }}</span>
               </div>
               <div class="day-grid">
-                <span
-                  v-for="day in month.days"
-                  :key="`${month.title}-${day.value}-${day.offset}`"
-                  :class="['day-cell', { muted: day.muted, active: day.active, mark: day.mark }]"
-                >
+                <span v-for="day in month.days" :key="`${month.title}-${day.value}-${day.offset}`"
+                  :class="['day-cell', { muted: day.muted, active: day.active, mark: day.mark }]">
                   {{ day.value }}
                 </span>
               </div>
             </div>
           </div>
-
-          <div v-else class="year-list-panel">
-            <div v-for="year in years" :key="year" :class="['year-chip', { active: selectedYear === year }]">
-              {{ year }}
-            </div>
-          </div>
         </aside>
 
-        <div class="schedule-list-right">
-          <div class="list-header">
-            <div class="list-title">日程列表</div>
-            <button v-if="calendarView === 'year'" type="button" class="outline-btn delete-btn" @click="showDeleteDialog = true">
-              删除
-              <i class="el-icon-delete"></i>
+        <main class="schedule-main">
+          <div class="status-pills">
+            <button @click="handleActiveStatus(pill.id)" type="button"
+              :class="{ 'activePill': pill.id === activeStatusPill }" class="status-pill" v-for="pill in status_pills"
+              :key="pill.id">
+              {{ pill.label }} ({{ pill.count }})
             </button>
           </div>
-          <div v-if="calendarView === 'year'" class="year-schedule-list">
-            <div v-for="item in yearScheduleList" :key="item.name" class="year-schedule-item">
-              <div class="year-schedule-top">
-                <div class="year-left">
-                  <span class="fold-bar"></span>
-                  <i class="el-icon-arrow-down"></i>
-                  <span class="new-tag">新增</span>
-                  <span class="year-schedule-name">{{ item.name }}</span>
-                </div>
-                <div class="year-icons">
-                  <i class="el-icon-copy-document"></i>
-                  <i class="el-icon-delete"></i>
-                </div>
-              </div>
-              <div class="year-schedule-mid">
-                <span>时间: {{ item.range }}</span>
-                <span>设备总数: {{ item.deviceCount }}</span>
-                <span>重复: {{ item.repeat }}</span>
-                <span>设备品类: {{ item.deviceType }}</span>
-              </div>
-              <div class="year-schedule-bottom">
-                <span>命令执行时间: {{ item.executeTime }}</span>
-                <span>{{ item.action }}</span>
-              </div>
+          <div class="schedule-list">
+            <div class="schedule-empty">
+              <div class="empty-icon">📄</div>
+              <div class="empty-text">暂无数据</div>
             </div>
           </div>
-          <div v-else class="schedule-empty">
-            <div class="empty-icon">📄</div>
-            <div class="empty-text">暂无数据</div>
-          </div>
-        </div>
+
+        </main>
       </div>
     </div>
 
@@ -162,32 +106,27 @@
               <span>开始日期</span>
               <span class="divider">→</span>
               <span>结束日期</span>
-              <i class="el-icon-date"></i>
+              <i class="el-icon-date" />
             </div>
           </div>
 
           <div class="field-block wide">
             <label class="field-label required">重复</label>
             <div class="repeat-tabs">
-              <button
-                v-for="item in repeatTabs"
-                :key="item.key"
-                type="button"
-                :class="['repeat-tab', { active: repeatMode === item.key }]"
-                @click="repeatMode = item.key"
-              >
+              <button v-for="item in repeatTabs" :key="item.key" type="button"
+                :class="['repeat-tab', { active: repeatMode === item.key }]" @click="repeatMode = item.key">
                 {{ item.label }}
               </button>
             </div>
 
             <div v-if="repeatMode === 'custom'" class="custom-repeat-box">
               <label class="check-line">
-                <input type="checkbox" v-model="customRepeat.ignoreHoliday">
+                <input v-model="customRepeat.ignoreHoliday" type="checkbox">
                 忽略节假日
               </label>
               <div class="week-checks">
                 <label v-for="day in weekdayOptions" :key="day.key" class="check-line">
-                  <input type="checkbox" v-model="customRepeat.days" :value="day.key">
+                  <input v-model="customRepeat.days" type="checkbox" :value="day.key">
                   {{ day.label }}
                 </label>
               </div>
@@ -217,11 +156,8 @@
                 <span v-for="week in weeks" :key="`${panel.title}-${week}`">{{ week }}</span>
               </div>
               <div class="day-grid compact">
-                <span
-                  v-for="day in panel.days"
-                  :key="`${panel.title}-${day.value}-${day.offset}`"
-                  :class="['day-cell', 'compact', { muted: day.muted, active: day.active }]"
-                >
+                <span v-for="day in panel.days" :key="`${panel.title}-${day.value}-${day.offset}`"
+                  :class="['day-cell', 'compact', { muted: day.muted, active: day.active }]">
                   {{ day.value }}
                 </span>
               </div>
@@ -239,7 +175,7 @@
 
           <div class="section-body">
             <div class="search-input">
-              <i class="el-icon-search"></i>
+              <i class="el-icon-search" />
               <input type="text" placeholder="请输入分区/设备名">
             </div>
 
@@ -283,18 +219,6 @@
         <button type="button" class="primary-btn next-btn">下一步</button>
       </div>
     </div>
-
-    <!-- 删除弹窗 -->
-    <div v-if="showDeleteDialog" class="delete-dialog">
-      <div class="delete-dialog-content">
-        <div class="delete-dialog-title">确认删除</div>
-        <div class="delete-dialog-message">确定要删除选中的日程吗？</div>
-        <div class="delete-dialog-actions">
-          <button type="button" class="outline-btn" @click="showDeleteDialog = false">取消</button>
-          <button type="button" class="primary-btn delete-confirm-btn" @click="confirmDelete">确认</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -311,42 +235,18 @@ function buildMonthDays(days, activeDays = [], markedDays = []) {
 
 export default {
   name: 'ScheduleManagement',
-  computed: {
-    currentDateLabel() {
-      if (this.calendarView === 'day') return this.currentDayTitle
-      return this.calendarView === 'year' ? `${this.selectedYear}` : this.currentMonthTitle
-    },
-    currentPickerLabel() {
-      if (this.calendarView === 'year') return `${this.selectedYear}`
-      return this.currentMonthTitle
-    },
-    currentMonthTitle() {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      return `${year}-${month}`
-    },
-    currentDayTitle() {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    },
-    visibleCalendarMonths() {
-      return this.calendarView === 'month' ? this.monthCalendarMonths : this.calendarMonths
-    }
+  created() {
+    this.renderCalendar()
   },
   data() {
     return {
+      rentTime: null,
+      rentNewTime: null,
+      focusDate: false,
       pageMode: 'list',
       activeScheduleTab: 'running',
-      calendarView: 'day',
-      activeStatus: 'valid',
-      selectedYear: '2026',
       repeatMode: 'daily',
       showExcludePanel: false,
-      showDeleteDialog: false,
       scheduleForm: {
         name: ''
       },
@@ -354,10 +254,26 @@ export default {
         ignoreHoliday: false,
         days: []
       },
+      activeView: 'day',
       scheduleTabs: [
         { key: 'running', label: '运行日程' },
-        { key: 'recommend', label: '推荐日程' }
+        { key: 'recommend', label: '削峰日程' }
       ],
+      activeStatusPill: 1,
+      status_pills: [{
+        id: 1,
+        label: "有效日程",
+        count: 0
+      }, {
+        id: 2,
+        label: "失效日程",
+        count: 0
+      },
+      {
+        id: 3,
+        label: "全部",
+        count: 0
+      }],
       repeatTabs: [
         { key: 'daily', label: '每天' },
         { key: 'workday', label: '工作日' },
@@ -375,57 +291,6 @@ export default {
         { key: 'sun', label: '周日' }
       ],
       weeks: ['日', '一', '二', '三', '四', '五', '六'],
-      years: ['2020', '2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029'],
-      monthCalendarMonths: [
-        {
-          title: '2026-01',
-          days: buildMonthDays([28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31], [], [1])
-        },
-        {
-          title: '2026-02',
-          days: buildMonthDays([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 1, 2, 3, 4, 5, 6, 7], [], [14])
-        },
-        {
-          title: '2026-03',
-          days: buildMonthDays([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4], [], [8])
-        },
-        {
-          title: '2026-04',
-          days: buildMonthDays([29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2], [], [5])
-        },
-        {
-          title: '2026-05',
-          days: buildMonthDays([26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30], [], [1])
-        },
-        {
-          title: '2026-06',
-          days: buildMonthDays([31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4], [], [20])
-        },
-        {
-          title: '2026-07',
-          days: buildMonthDays([28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1], [], [])
-        },
-        {
-          title: '2026-08',
-          days: buildMonthDays([26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], [], [])
-        },
-        {
-          title: '2026-09',
-          days: buildMonthDays([30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3], [], [15])
-        },
-        {
-          title: '2026-10',
-          days: buildMonthDays([27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31], [], [1])
-        },
-        {
-          title: '2026-11',
-          days: buildMonthDays([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5], [], [])
-        },
-        {
-          title: '2026-12',
-          days: buildMonthDays([29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2], [], [25])
-        }
-      ],
       calendarMonths: [
         {
           title: '2026-06',
@@ -449,19 +314,41 @@ export default {
           title: '2026年7月',
           days: buildMonthDays([29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2], [])
         }
-      ],
-      yearScheduleList: [
-        { name: '1', range: '2026-01-02~2026-01-04', deviceCount: 1, repeat: '每天', deviceType: '空调', executeTime: '00:00', action: '开机 制冷 设定温度 20℃ 自动' },
-        { name: '每日关机3（1）', range: '2026-01-01~2026-05-13', deviceCount: 21, repeat: '每天', deviceType: '空调', executeTime: '23:59', action: '关机' },
-        { name: '每日关机2（1）', range: '2026-01-01~2026-05-30', deviceCount: 21, repeat: '每天', deviceType: '空调', executeTime: '23:30', action: '关机' },
-        { name: '每日关机1（2）', range: '2026-01-01~2026-05-14', deviceCount: 21, repeat: '每天', deviceType: '空调', executeTime: '22:30', action: '关机' }
       ]
     }
   },
   methods: {
-    confirmDelete() {
-      this.showDeleteDialog = false
-      this.$message.success('删除成功')
+    handleFocusDate() {
+      this.focusDate = true
+    },
+    handleBlurDate() {
+      this.focusDate = false
+    },
+    renderCalendar(val) {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      this.rentTime = `${year}-${month}-${day}`
+      this.rentNewTime = `${year}-${month}-${day}`
+      return val === 'day' ? `${year}-${month}-${day}` : val === 'month' ? `${year}-${month}` : `${year}`
+    },
+    handleSwitch(viewMode) {
+      this.activeView = viewMode
+      switch (viewMode) {
+        case 'day':
+          this.rentTime = this.renderCalendar('day')
+          break;
+        case 'month':
+          this.rentTime = this.renderCalendar('month')
+          break;
+        case 'year':
+          this.rentTime = this.renderCalendar('year')
+          break;
+      }
+    },
+    handleActiveStatus(id) {
+      this.activeStatusPill = id
     }
   }
 }
@@ -469,7 +356,7 @@ export default {
 
 <style lang="scss" scoped>
 .schedule-page {
-  min-height: calc(100vh - 84px);
+  height: calc(100vh - 84px);
   background: #fff;
   color: #1f2d45;
 }
@@ -511,7 +398,10 @@ export default {
 
 .toolbar-title {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
+  color: #0f111c;
+  line-height: 22px;
+  padding-right: 4px;
 }
 
 .date-pill {
@@ -584,13 +474,23 @@ export default {
 
 .schedule-content {
   display: flex;
-  min-height: calc(100vh - 190px);
+  height: calc(100vh - 150px);
+  padding: 16px;
+
+  .schedule-main {
+    box-sizing: border-box;
+    width: calc(100% - 312px);
+    height: 100%;
+    padding: 0 0 0 20px
+  }
 }
 
 .calendar-sidebar {
-  width: 320px;
-  padding: 18px 14px;
-  border-right: 1px solid #edf0f5;
+  width: 312px;
+  padding: 4px 16px 0 8px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  position: relative;
 }
 
 .calendar-filter {
@@ -605,20 +505,47 @@ export default {
 }
 
 .month-input {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 152px;
-  height: 32px;
   padding: 0 12px;
-  border: 1px solid #c9d3e6;
-  border-radius: 4px;
+  position: relative;
+
+  .calendar-icon {
+    position: absolute;
+    right: 33px;
+    top: 8px;
+    z-index: 2;
+  }
+  .redDate{
+    color:#1a4fd9;
+  }
+
+  ::v-deep .el-input__prefix {
+    opacity: 0;
+  }
+
+  ::v-deep .el-date-editor {
+    width: 180px !important;
+    height: 32px !important;
+  }
+
+  ::v-deep .el-date-editor .el-input__inner {
+    height: 32px !important;
+    border-radius: 6px !important;
+    padding-left: 10px !important;
+  }
+
+  ::v-deep .el-date-editor .el-input__inner:hover {
+    border-color: #1a4fd9 !important;
+  }
+
+  ::v-deep .el-date-editor .el-input__inner:focus {
+    border-color: #2d63ff !important;
+  }
 }
 
 .status-pills {
   display: flex;
   gap: 12px;
-  margin: 22px 0 16px;
+  margin: 0 0 16px;
 }
 
 .status-pill {
@@ -631,13 +558,13 @@ export default {
   cursor: pointer;
 }
 
-.status-pill.active {
+.status-pill.activePill {
   border-color: #2d63ff;
   color: #2d63ff;
 }
 
 .mini-calendar-list {
-  height: calc(100vh - 320px);
+  height: calc(100vh - 220px);
   overflow-y: auto;
 }
 
@@ -646,10 +573,13 @@ export default {
 }
 
 .mini-title {
-  margin-bottom: 12px;
-  text-align: center;
+  cursor: pointer;
   font-size: 16px;
-  font-weight: 700;
+  color: #0f111c;
+  line-height: 22px;
+  text-align: center;
+  font-weight: 500;
+  padding: 15px 0;
 }
 
 .week-row,
@@ -705,23 +635,31 @@ export default {
   height: 28px;
 }
 
-.schedule-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #8d9ab0;
+.schedule-list {
+  box-sizing: border-box;
+  height: calc(100% - 36px);
+  padding-top: 20px;
+  overflow-y: auto;
+
+  .schedule-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .empty-icon {
+    font-size: 56px;
+    opacity: 0.3;
+  }
+
+  .empty-text {
+    margin-top: 10px;
+  }
 }
 
-.empty-icon {
-  font-size: 56px;
-  opacity: 0.3;
-}
-
-.empty-text {
-  margin-top: 10px;
-}
 
 .schedule-create-page {
   padding: 8px 12px 16px;
@@ -999,6 +937,7 @@ export default {
 }
 
 @media (max-width: 1280px) {
+
   .schedule-content,
   .create-columns,
   .basic-grid,
@@ -1017,205 +956,5 @@ export default {
   .dual-calendar {
     grid-template-columns: 1fr;
   }
-}
-
-.schedule-list-right {
-  flex: 1;
-  padding: 20px;
-  background: #fff;
-}
-
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.list-title {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.delete-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.schedule-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.schedule-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid #c9d3e6;
-  border-radius: 6px;
-  background: #fff;
-}
-
-.schedule-item-header {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.schedule-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #33425d;
-}
-
-.schedule-time {
-  font-size: 13px;
-  color: #8a99b0;
-}
-
-.schedule-status {
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.schedule-status.active {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.schedule-status.invalid {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.delete-dialog {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.delete-dialog-content {
-  background: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  max-width: 400px;
-  width: 90%;
-}
-
-.delete-dialog-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 16px;
-}
-
-.delete-dialog-message {
-  font-size: 14px;
-  color: #6f7d97;
-  margin-bottom: 24px;
-}
-
-.delete-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.delete-confirm-btn {
-  min-width: 72px;
-}
-
-.year-list-panel {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.year-chip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
-  border: 1px solid #d9e0ee;
-  border-radius: 6px;
-  color: #33425d;
-}
-
-.year-chip.active {
-  background: #2d63ff;
-  color: #fff;
-  border-color: #2d63ff;
-}
-
-.year-schedule-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.year-schedule-item {
-  border-radius: 8px;
-  background: #f7f7f7;
-  overflow: hidden;
-}
-
-.year-schedule-top,
-.year-schedule-mid,
-.year-schedule-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-}
-
-.year-schedule-mid,
-.year-schedule-bottom {
-  border-top: 1px solid #ececec;
-  color: #47546a;
-}
-
-.year-left,
-.year-icons {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.fold-bar {
-  width: 4px;
-  height: 18px;
-  border-radius: 2px;
-  background: #4f5d75;
-}
-
-.new-tag {
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #2d63ff;
-  color: #fff;
-  font-size: 12px;
-}
-
-.year-schedule-name {
-  font-size: 18px;
-  color: #1f2d45;
-}
-
-.year-icons i {
-  font-size: 18px;
-  color: #2d63ff;
-  cursor: pointer;
 }
 </style>

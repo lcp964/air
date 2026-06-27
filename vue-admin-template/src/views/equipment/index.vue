@@ -2258,7 +2258,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  width: 1600px;
+  width: 100%;
 }
 
 .filter-row {
@@ -3151,7 +3151,7 @@ export default {
   color: #fff;
 }
 
-@media (max-width: 1600px) {
+@media (max-width: 100%) {
   .card-grid,
   .edit-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

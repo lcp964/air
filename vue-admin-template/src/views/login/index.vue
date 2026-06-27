@@ -31,11 +31,34 @@
       <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;"
         @click.native.prevent="handleLogin">登录</el-button>
 
+      <el-button type="text" class="register-btn" @click="openRegisterDialog">没有账号？立即注册</el-button>
+
     </el-form>
+
+    <el-dialog title="用户注册" :visible.sync="registerDialogVisible" width="420px" :close-on-click-modal="false"
+      @closed="resetRegisterForm">
+      <el-form ref="registerForm" :model="registerForm" :rules="registerRules" class="register-form" label-width="90px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="registerForm.username" placeholder="请输入用户名" auto-complete="off" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="registerForm.password" type="password" placeholder="请输入密码" auto-complete="off" />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" auto-complete="off"
+            @keyup.enter.native="handleRegister" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="registerDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="registerLoading" @click="handleRegister">注册</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import { register } from '@/api/user'
 import { validUsername } from '@/utils/validate'
 
 export default {
@@ -55,16 +78,35 @@ export default {
         callback()
       }
     }
+    const validateConfirmPassword = (rule, value, callback) => {
+      if (value !== this.registerForm.password) {
+        callback(new Error('两次输入的密码不一致'))
+      } else {
+        callback()
+      }
+    }
     return {
       loginForm: {
         username: 'admin',
         password: '111111'
       },
+      registerForm: {
+        username: '',
+        password: '',
+        confirmPassword: ''
+      },
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
         password: [{ required: true, trigger: 'blur', validator: validatePassword }]
       },
+      registerRules: {
+        username: [{ required: true, trigger: 'blur', validator: validateUsername }],
+        password: [{ required: true, trigger: 'blur', validator: validatePassword }],
+        confirmPassword: [{ required: true, trigger: 'blur', validator: validateConfirmPassword }]
+      },
       loading: false,
+      registerLoading: false,
+      registerDialogVisible: false,
       passwordType: 'password',
       redirect: undefined
     }
@@ -102,6 +144,41 @@ export default {
           console.log('error submit!!')
           return false
         }
+      })
+    },
+    openRegisterDialog() {
+      this.registerDialogVisible = true
+      this.$nextTick(() => {
+        this.$refs.registerForm && this.$refs.registerForm.clearValidate()
+      })
+    },
+    resetRegisterForm() {
+      this.registerForm = {
+        username: '',
+        password: '',
+        confirmPassword: ''
+      }
+      this.$nextTick(() => {
+        this.$refs.registerForm && this.$refs.registerForm.clearValidate()
+      })
+    },
+    handleRegister() {
+      this.$refs.registerForm.validate(valid => {
+        if (!valid) {
+          return false
+        }
+
+        this.registerLoading = true
+        const { username, password } = this.registerForm
+        register({ username: username.trim(), password }).then(() => {
+          this.$message.success('注册成功，请登录')
+          this.loginForm.username = username.trim()
+          this.loginForm.password = password
+          this.registerDialogVisible = false
+          this.registerLoading = false
+        }).catch(() => {
+          this.registerLoading = false
+        })
       })
     }
   }
@@ -155,6 +232,28 @@ $cursor: #fff;
     border: 1px solid #8e9ab4;
     border-radius: 4px;
     transition: all .3s;
+  }
+
+  .register-form {
+    .el-input {
+      width: 100%;
+      height: auto;
+
+      input {
+        height: 40px;
+        padding: 0 15px;
+        color: #606266;
+        border: 1px solid #DCDFE6;
+        border-radius: 4px;
+        background-color: #fff;
+        caret-color: auto;
+      }
+    }
+
+    .el-form-item {
+      border: 0;
+      background: transparent;
+    }
   }
 }
 </style>
@@ -235,6 +334,12 @@ $light_gray: #eee;
     color: $dark_gray;
     cursor: pointer;
     user-select: none;
+  }
+
+  .register-btn {
+    width: 100%;
+    margin-left: 0;
+    color: #409EFF;
   }
 }
 </style>

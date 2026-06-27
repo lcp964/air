@@ -132,6 +132,18 @@ export const constantRoutes = [
       }
     ]
   },
+  {
+    path: '/help',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        name: 'Help',
+        component: () => import('@/views/help/index'),
+        meta: { title: '帮助中心', icon: 'el-icon-setting' }
+      }
+    ]
+  },
 
   {
     path: '/logs',

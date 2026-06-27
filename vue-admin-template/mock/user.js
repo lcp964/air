@@ -24,6 +24,47 @@ const users = {
 }
 
 module.exports = [
+  // user register
+  {
+    url: '/vue-admin-template/user/register',
+    type: 'post',
+    response: config => {
+      const { username, password } = config.body
+      const userName = username && username.trim()
+
+      if (!userName || !password) {
+        return {
+          code: 40000,
+          message: '用户名和密码不能为空'
+        }
+      }
+
+      if (tokens[userName]) {
+        return {
+          code: 40001,
+          message: '用户名已存在'
+        }
+      }
+
+      const token = `${userName}-token`
+      tokens[userName] = { token }
+      users[token] = {
+        roles: ['editor'],
+        introduction: `I am ${userName}`,
+        avatar: 'https://static-btri.midea.com/mfs/1001/1655968693532.png',
+        name: userName
+      }
+
+      return {
+        code: 20000,
+        data: {
+          username: userName
+        },
+        message: '注册成功'
+      }
+    }
+  },
+
   // user login
   {
     url: '/vue-admin-template/user/login',

@@ -30,12 +30,25 @@ module.exports = {
   lintOnSave: process.env.NODE_ENV === 'development',
   productionSourceMap: false,
   devServer: {
+    host: '0.0.0.0',
+    open: true,
+    hot: true,
     port: port,
     open: true,
     overlay: {
       warnings: false,
       errors: true
     },
+    proxy: {
+      '/dev-api': {
+        target: 'http://192.168.0.104:8084/', // 后端 API 地址
+        changeOrigin: true, // 允许跨域
+        pathRewrite: {
+          '^/dev-api': '/' // 把 '/dev-api' 重写为空或替换为后端实际路径
+        },
+      },
+    },
+    disableHostCheck: true,
     before: require('./mock/mock-server.js')
   },
   configureWebpack: {

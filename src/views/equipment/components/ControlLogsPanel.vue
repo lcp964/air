@@ -20,12 +20,15 @@
         </div>
         <div class="filter-item">
           <span class="filter-label">执行时间</span>
-          <div class="range-box">
-            <span>开始日期</span>
-            <span class="range-sep">→</span>
-            <span>结束日期</span>
-            <i class="el-icon-date"></i>
-          </div>
+          <el-date-picker
+            v-model="dateRange"
+            type="daterange"
+            range-separator="→"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            class="date-range-picker"
+            value-format="yyyy-MM-dd"
+          />
         </div>
         <div class="filter-item">
           <span class="filter-label">任务状态</span>
@@ -255,6 +258,7 @@ export default {
       activeLogTab: 'schedule',
       keyword: '',
       selectedStatus: '',
+      dateRange: '',
       showDetail: false,
       currentLog: null,
       logTabs: [
@@ -379,6 +383,37 @@ export default {
 
 .status-select {
   width: 160px;
+}
+
+.date-range-picker {
+  width: 280px !important;
+
+  ::v-deep .el-input__inner {
+    height: 32px;
+    line-height: 32px;
+    border: 1px solid #9fb5dc;
+    border-radius: 4px;
+    background: #fff;
+    color: #1f2d45;
+  }
+
+  ::v-deep .el-range-input {
+    color: #1f2d45;
+  }
+
+  ::v-deep .el-range-separator {
+    color: #b0bbcc;
+    padding: 0 5px;
+  }
+
+  ::v-deep .el-range__icon,
+  ::v-deep .el-range__close-icon {
+    color: #9fb5dc;
+  }
+
+  ::v-deep .el-range-input::placeholder {
+    color: #6c7d98;
+  }
 }
 
 .export-btn {
@@ -532,10 +567,10 @@ export default {
   }
 
   .filter-input,
-  .range-box,
+  .date-range-picker,
   .status-select {
     flex: 1;
-    width: auto;
+    width: auto !important;
   }
 }
 </style>
